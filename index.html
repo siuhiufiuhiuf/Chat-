@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5b4bdb">
+  <title>Conecta — Chat comunitario</title>
+  <style>
+    :root{--purple:#5b4bdb;--purple2:#7869f2;--ink:#20213a;--muted:#73758d;--bg:#f4f5ff;--line:#e7e8f4;--white:#fff;--green:#24a879}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:linear-gradient(135deg,#f5f4ff,#eef7ff);color:var(--ink);min-height:100vh}
+    button,input{font:inherit} button{cursor:pointer}
+    .shell{max-width:1120px;margin:auto;padding:24px}
+    .brand{display:flex;align-items:center;gap:12px;margin:4px 0 22px;font-weight:800;font-size:1.25rem}.logo{display:grid;place-items:center;background:var(--purple);color:white;width:42px;height:42px;border-radius:14px;box-shadow:0 8px 18px #5b4bdb33}
+    .brand small{display:block;color:var(--muted);font-size:.78rem;font-weight:500;margin-top:2px}
+    .panel{background:var(--white);border:1px solid #ffffffb8;border-radius:24px;box-shadow:0 18px 55px #343a7a12}
+    .entry-wrap{min-height:70vh;display:grid;place-items:center}.entry{max-width:480px;width:100%;padding:38px;text-align:center}.entry .hero{font-size:3rem}.entry h1{font-size:2rem;margin:12px 0 8px}.entry p{color:var(--muted);line-height:1.6}.field{display:flex;gap:10px;margin-top:24px}.field input{min-width:0;flex:1;padding:14px 15px;border:1px solid var(--line);border-radius:13px;outline:none}.field input:focus{border-color:var(--purple);box-shadow:0 0 0 3px #5b4bdb18}
+    .primary{border:0;background:var(--purple);color:white;font-weight:700;padding:13px 18px;border-radius:13px;transition:.2s}.primary:hover{background:#4938c5;transform:translateY(-1px)}.primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .hint{font-size:.8rem!important;margin-top:14px}
+    .chat-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:18px}.sidebar{padding:22px;align-self:stretch}.side-title{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;display:flex;justify-content:space-between;align-items:center}.online-count{background:#e7faf2;color:#16875e;padding:4px 8px;border-radius:30px;font-size:.75rem}.user-list{list-style:none;padding:0;margin:18px 0}.user-list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f8;font-size:.92rem;overflow-wrap:anywhere}.dot{width:9px;height:9px;background:var(--green);border-radius:50%;flex:none}.you{font-size:.72rem;color:var(--muted);margin-left:auto}
+    .safety{margin-top:22px;background:#f6f5ff;border-radius:16px;padding:14px;font-size:.82rem;line-height:1.55;color:#555779}.safety strong{display:block;color:#3c367d;margin-bottom:4px}
+    .chat{display:flex;flex-direction:column;min-height:70vh;overflow:hidden}.chat-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.chat-head h2{margin:0;font-size:1.1rem}.chat-head p{margin:4px 0 0;color:var(--muted);font-size:.82rem}.name-tag{background:#f0efff;color:var(--purple);font-size:.8rem;font-weight:700;padding:8px 11px;border-radius:10px;white-space:nowrap}
+    .messages{flex:1;min-height:300px;max-height:52vh;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:14px}.empty{text-align:center;color:var(--muted);margin:auto;line-height:1.6}.message{max-width:82%;align-self:flex-start}.message.mine{align-self:flex-end}.msg-meta{display:flex;gap:8px;align-items:center;margin:0 8px 5px;font-size:.75rem;color:var(--muted)}.mine .msg-meta{justify-content:flex-end}.bubble{padding:12px 15px;background:#f0f1fa;border-radius:5px 17px 17px 17px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}.mine .bubble{background:var(--purple);color:white;border-radius:17px 5px 17px 17px}.composer{border-top:1px solid var(--line);padding:18px 20px 20px}.composer-row{display:flex;gap:10px}.composer input{min-width:0;flex:1;border:1px solid var(--line);border-radius:13px;padding:14px;outline:none}.composer input:focus{border-color:var(--purple)}.composer-note{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.75rem;margin-top:10px}.status{color:var(--muted)}.error{color:#b42318;background:#fff0ef;border-radius:12px;padding:10px 12px;font-size:.85rem;margin-top:12px}.hidden{display:none!important}.footer{text-align:center;color:var(--muted);font-size:.78rem;padding:18px}
+    @media(max-width:760px){.shell{padding:14px}.chat-layout{grid-template-columns:1fr}.sidebar{order:2}.chat{min-height:65vh}.messages{max-height:48vh;padding:18px}.entry{padding:26px 20px}.field{flex-direction:column}.chat-head{padding:17px}.message{max-width:92%}.sidebar{padding:18px}.user-list{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="brand"><div class="logo">✦</div><div>Conecta<small>Un espacio para conversar con respeto</small></div></div>
+
+    <section id="entryScreen" class="entry-wrap">
+      <div class="panel entry">
+        <div class="hero">💬</div>
+        <h1>¡Hola! ¿Cómo te llamas?</h1>
+        <p>Escribe el nombre que quieres mostrar en el chat y únete a la conversación.</p>
+        <form id="joinForm">
+          <div class="field"><input id="nameInput" maxlength="24" autocomplete="nickname" placeholder="Tu nombre" required><button class="primary" type="submit">Entrar</button></div>
+        </form>
+        <p class="hint">Usa un apodo. No compartas datos personales ni información privada.</p>
+        <div id="entryError" class="error hidden"></div>
+      </div>
+    </section>
+
+    <section id="chatScreen" class="chat-layout hidden">
+      <aside class="panel sidebar">
+        <div class="side-title">Personas conectadas <span id="onlineCount" class="online-count">0 en línea</span></div>
+        <ul id="userList" class="user-list"><li class="status">Conectando…</li></ul>
+        <div class="safety"><strong>🛡️ Reglas de convivencia</strong>
+          Sé amable. Los insultos y las palabras obscenas se bloquean automáticamente. Solo puedes enviar un mensaje cada 30 segundos.
+        </div>
+      </aside>
+      <main class="panel chat">
+        <header class="chat-head"><div><h2>Chat general</h2><p id="connectionStatus">Conectando al chat…</p></div><div id="myName" class="name-tag"></div></header>
+        <div id="messages" class="messages"><div class="empty">👋<br>¡El chat está listo para ti!<br>Sé la primera persona en saludar.</div></div>
+        <form id="messageForm" class="composer">
+          <div class="composer-row"><input id="messageInput" maxlength="280" placeholder="Escribe un mensaje respetuoso…" autocomplete="off" required><button id="sendButton" class="primary" type="submit" disabled>Enviar</button></div>
+          <div class="composer-note"><span id="sendHint">Un mensaje cada 30 segundos.</span><span id="charCount">0/280</span></div>
+          <div id="messageError" class="error hidden"></div>
+        </form>
+      </main>
+    </section>
+    <div class="footer">Conecta · Cuida tus palabras y respeta a los demás.</div>
+  </div>
+
+  <!-- Firebase permite que personas en distintos dispositivos compartan el mismo chat.
+       Configura tu proyecto siguiendo las instrucciones del README. -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue, onChildAdded, query, limitToLast, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+    // 1. Reemplaza estos valores con la configuración de TU proyecto Firebase.
+    const firebaseConfig = {
+      apiKey: "PEGA_AQUI_TU_API_KEY",
+      authDomain: "PEGA_AQUI_TU_PROYECTO.firebaseapp.com",
+      databaseURL: "https://PEGA_AQUI_TU_PROYECTO-default-rtdb.firebaseio.com",
+      projectId: "PEGA_AQUI_TU_PROYECTO",
+      appId: "PEGA_AQUI_TU_APP_ID"
+    };
+
+    const $ = id => document.getElementById(id);
+    const entryScreen = $("entryScreen"), chatScreen = $("chatScreen");
+    const entryError = $("entryError"), messageError = $("messageError");
+    let app, db, auth, currentUser = null, displayName = "", lastSentAt = 0;
+    const presenceByUid = new Map();
+    const messageIds = new Set();
+
+    // Lista básica de términos ofensivos en español. Puedes ampliarla según el contexto.
+    // La moderación por palabras no detecta todas las variantes ni sustituye la supervisión.
+    const blockedWords = [
+      "mierda","mierdas","puta","putas","puto","putos","putas","putita","putito",
+      "hp","hpta","hijueputa","hijueputas","malparido","malparida","malparidos",
+      "gonorrea","gonorre*","marica","maricon","maricón","perra","perro hp",
+      "pendejo","pendeja","imbecil","imbécil","idiota","estupido","estúpido",
+      "estupida","estúpida","coño","joder","cabron","cabrón","culero","verga",
+      "chingar","chingada","fuck","fucking","shit","bitch","asshole","motherfucker"
+    ];
+    const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    function normalizeWord(s) {
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/0/g,"o").replace(/1/g,"i").replace(/3/g,"e").replace(/4/g,"a").replace(/5/g,"s").replace(/@/g,"a").replace(/\$/g,"s");
+    }
+    function containsBlocked(text) {
+      const normalized = normalizeWord(text);
+      return blockedWords.some(word => {
+        const w = normalizeWord(word);
+        return new RegExp("(^|[^a-z0-9])" + escapeRegExp(w) + "([^a-z0-9]|$)", "i").test(normalized);
+      });
+    }
+    function showError(el, text) { el.textContent = text; el.classList.remove("hidden"); }
+    function hideError(el) { el.textContent = ""; el.classList.add("hidden"); }
+    function safeText(el, text) { el.textContent = text; }
+
+    function initFirebase() {
+      if (firebaseConfig.apiKey.startsWith("PEGA_AQUI") || firebaseConfig.projectId.startsWith("PEGA_AQUI")) {
+        showError(entryError, "Falta conectar Firebase. Abre el archivo README y sigue los pasos de configuración para activar el chat entre dispositivos.");
+        return false;
+      }
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        auth = getAuth(app);
+        return true;
+      } catch (e) {
+        showError(entryError, "No se pudo iniciar el chat. Revisa la configuración de Firebase en index.html.");
+        return false;
+      }
+    }
+
+    $("joinForm").addEventListener("submit", async e => {
+      e.preventDefault(); hideError(entryError);
+      displayName = $("nameInput").value.trim().replace(/\s+/g, " ");
+      if (displayName.length < 2) { showError(entryError, "Escribe un nombre de al menos 2 caracteres."); return; }
+      if (containsBlocked(displayName)) { showError(entryError, "Ese nombre contiene palabras no permitidas. Prueba con otro."); return; }
+      if (!db && !initFirebase()) return;
+      try {
+        const credential = await signInAnonymously(auth);
+        currentUser = credential.user;
+        safeText($("myName"), displayName);
+        entryScreen.classList.add("hidden");
+        chatScreen.classList.remove("hidden");
+        startPresence();
+        startMessages();
+        $("connectionStatus").textContent = "Conectado · Conversa con respeto";
+        $("sendButton").disabled = false;
+      } catch (err) {
+        showError(entryError, "No fue posible conectar. Verifica que el acceso anónimo esté activado en Firebase Authentication y que las reglas de la base de datos estén configuradas.");
+      }
+    });
+
+    function startPresence() {
+      const myPresence = ref(db, "presence/" + currentUser.uid);
+      const connectedRef = ref(db, ".info/connected");
+      onValue(connectedRef, async snap => {
+        if (snap.val() === true) {
+          await onDisconnect(myPresence).remove();
+          await set(myPresence, { name: displayName, uid: currentUser.uid, since: serverTimestamp() });
+        }
+      });
+      onValue(ref(db, "presence"), snap => {
+        presenceByUid.clear();
+        snap.forEach(child => {
+          const person = child.val();
+          if (person && person.name) presenceByUid.set(child.key, person.name);
+        });
+        renderUsers();
+      });
+    }
+    function renderUsers() {
+      const list = $("userList"); list.replaceChildren();
+      const people = [...presenceByUid.entries()].sort((a,b) => a[1].localeCompare(b[1]));
+      $("onlineCount").textContent = people.length + (people.length === 1 ? " en línea" : " en línea");
+      if (!people.length) {
+        const li = document.createElement("li"); li.className = "status"; li.textContent = "Aún no hay personas conectadas."; list.append(li); return;
+      }
+      people.forEach(([uid, name]) => {
+        const li = document.createElement("li"), dot = document.createElement("span"), label = document.createElement("span");
+        dot.className = "dot"; label.textContent = name; li.append(dot, label);
+        if (uid === currentUser?.uid) { const you = document.createElement("span"); you.className = "you"; you.textContent = "Tú"; li.append(you); }
+        list.append(li);
+      });
+    }
+
+    function startMessages() {
+      const messagesRef = query(ref(db, "messages"), limitToLast(100));
+      onChildAdded(messagesRef, snap => {
+        if (messageIds.has(snap.key)) return;
+        messageIds.add(snap.key);
+        const msg = snap.val();
+        if (!msg || typeof msg.text !== "string" || typeof msg.name !== "string") return;
+        renderMessage(msg, snap.key);
+      });
+    }
+    function renderMessage(msg, id) {
+      const box = $("messages");
+      const empty = box.querySelector(".empty"); if (empty) empty.remove();
+      const wrap = document.createElement("div");
+      wrap.className = "message" + (msg.uid === currentUser?.uid ? " mine" : "");
+      const meta = document.createElement("div"); meta.className = "msg-meta";
+      const name = document.createElement("strong"); name.textContent = msg.name;
+      const time = document.createElement("span");
+      time.textContent = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : "ahora";
+      meta.append(name, time);
+      const bubble = document.createElement("div"); bubble.className = "bubble"; bubble.textContent = msg.text;
+      wrap.append(meta, bubble); wrap.dataset.id = id; box.append(wrap); box.scrollTop = box.scrollHeight;
+    }
+
+    const messageInput = $("messageInput");
+    messageInput.addEventListener("input", () => { $("charCount").textContent = messageInput.value.length + "/280"; });
+    $("messageForm").addEventListener("submit", async e => {
+      e.preventDefault(); hideError(messageError);
+      const text = messageInput.value.trim();
+      if (!text) return;
+      if (containsBlocked(text)) { showError(messageError, "Tu mensaje contiene una palabra no permitida. Cámbiala para poder enviarlo."); return; }
+      const wait = 30000 - (Date.now() - lastSentAt);
+      if (wait > 0) {
+        showError(messageError, "Espera " + Math.ceil(wait / 1000) + " segundos antes de enviar otro mensaje.");
+        return;
+      }
+      if (!currentUser || !db) { showError(messageError, "No estás conectado al chat."); return; }
+      $("sendButton").disabled = true;
+      try {
+        await push(ref(db, "messages"), {
+          uid: currentUser.uid, name: displayName, text,
+          createdAt: Date.now(), serverCreatedAt: serverTimestamp()
+        });
+        lastSentAt = Date.now();
+        messageInput.value = ""; $("charCount").textContent = "0/280";
+        $("sendHint").textContent = "Puedes enviar otro mensaje en 30 segundos.";
+        setTimeout(() => { $("sendButton").disabled = false; $("sendHint").textContent = "Ya puedes enviar otro mensaje."; }, 30000);
+      } catch (err) {
+        showError(messageError, "No se pudo enviar. Revisa la conexión y las reglas de Firebase.");
+        $("sendButton").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
