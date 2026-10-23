@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conecta | Chat comunitario</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #eeeaff, #e5f5ff);
+  color: #292747;
+  min-height: 100vh;
+}
+
+header {
+  background: #6355d9;
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+header p {
+  margin-bottom: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 30px #24206015;
+  margin-bottom: 20px;
+}
+
+input, button {
+  font: inherit;
+  padding: 13px;
+  border-radius: 10px;
+}
+
+input {
+  border: 1px solid #d9d7e9;
+  width: 100%;
+  margin: 8px 0;
+}
+
+button {
+  border: none;
+  background: #6355d9;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #493bc1;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 20px;
+}
+
+#users {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+
+#messages {
+  height: 350px;
+  overflow-y: auto;
+  background: #f8f7ff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.message {
+  background: #e7e3ff;
+  padding: 11px;
+  border-radius: 12px;
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+
+.message strong {
+  color: #493bc1;
+}
+
+#notice {
+  color: #a12d2d;
+  font-size: 14px;
+}
+
+.small {
+  color: #77758d;
+  font-size: 13px;
+}
+
+@media(max-width: 650px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  #messages {
+    height: 300px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>💬 Conecta</h1>
+  <p>Un espacio para conversar con respeto</p>
+</header>
+
+<div class="container">
+
+  <section id="login" class="card">
+    <h2>¡Bienvenido a Conecta!</h2>
+    <p>¿Cómo quieres que te llamemos?</p>
+
+    <form id="loginForm">
+      <input
+        id="name"
+        placeholder="Escribe tu nombre o apodo"
+        maxlength="24"
+        required
+      >
+      <button type="submit">Entrar al chat</button>
+    </form>
+
+    <p class="small">
+      No compartas contraseñas, direcciones ni información privada.
+    </p>
+    <p id="loginError" role="status"></p>
+  </section>
+
+  <section id="chat" class="hidden">
+
+    <div class="layout">
+
+      <aside class="card">
+        <h3>🟢 Personas conectadas</h3>
+        <p id="count">0 personas</p>
+        <ul id="users"></ul>
+
+        <hr>
+
+        <p class="small">
+          Respeta a los demás. Las palabras ofensivas están prohibidas.
+        </p>
+      </aside>
+
+      <main class="card">
+        <h2>Chat general</h2>
+        <p>Conectado como <strong id="myName"></strong></p>
+
+        <div id="messages" aria-live="polite">
+          <p class="small">
+            ¡El chat está listo! Envía el primer saludo.
+          </p>
+        </div>
+
+        <form id="messageForm">
+          <input
+            id="message"
+            placeholder="Escribe un mensaje..."
+            maxlength="280"
+            autocomplete="off"
+            required
+          >
+          <button id="send" type="submit">Enviar mensaje</button>
+        </form>
+
+        <p id="notice" role="status"></p>
+        <p id="timer" class="small">
+          Puedes enviar un mensaje cada 30 segundos.
+        </p>
+      </main>
+
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+
+import {
+  getDatabase, ref, push, set, onValue,
+  onChildAdded, onDisconnect, serverTimestamp,
+  query, limitToLast
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+import {
+  getAuth, signInAnonymously
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+// PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  databaseURL: "TU_DATABASE_URL",
+  projectId: "TU_PROJECT_ID",
+  appId: "TU_APP_ID"
+};
+
+// Palabras que el chat no permitirá.
+const blockedWords = [
+  "mierda", "mierdas", "puta", "puto", "putas",
+  "hijueputa", "hijueputas", "malparido", "malparida",
+  "gonorrea", "maricon", "maricón", "pendejo",
+  "pendeja", "imbecil", "imbécil", "estupido",
+  "estúpido", "estupida", "estúpida", "cabron",
+  "cabrón", "coño", "verga", "culero", "fuck",
+  "fucking", "shit", "bitch", "asshole"
+];
+
+let app, db, auth;
+let me = null;
+let myName = "";
+let lastSent = 0;
+
+const $ = id => document.getElementById(id);
+
+function normalize(text) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/0/g, "o")
+    .replace(/1/g, "i")
+    .replace(/3/g, "e")
+    .replace(/4/g, "a")
+    .replace(/5/g, "s")
+    .replace(/@/g, "a");
+}
+
+function hasBadWords(text) {
+  const words = normalize(text).match(/[a-z0-9]+/g) || [];
+  return blockedWords.some(word =>
+    words.includes(normalize(word))
+  );
+}
+
+function showNotice(text) {
+  $("notice").textContent = text;
+}
+
+function renderMessage(data) {
+  if (!data || typeof data.text !== "string") return;
+
+  const box = $("messages");
+
+  const empty = box.querySelector(".small");
+  if (empty && box.children.length === 1) {
+    box.replaceChildren();
+  }
+
+  const item = document.createElement("div");
+  item.className = "message";
+
+  const author = document.createElement("strong");
+  author.textContent = data.name + ": ";
+
+  const text = document.createElement("span");
+  text.textContent = data.text;
+
+  item.append(author, text);
+  box.appendChild(item);
+  box.scrollTop = box.scrollHeight;
+}
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  myName = $("name").value.trim().replace(/\s+/g, " ");
+
+  if (myName.length < 2) {
+    $("loginError").textContent =
+      "Escribe un nombre de al menos dos caracteres.";
+    return;
+  }
+
+  if (hasBadWords(myName)) {
+    $("loginError").textContent =
+      "Ese nombre contiene palabras no permitidas.";
+    return;
+  }
+
+  if (
+    firebaseConfig.apiKey === "TU_API_KEY" ||
+    firebaseConfig.projectId === "TU_PROJECT_ID"
+  ) {
+    $("loginError").textContent =
+      "Primero debes configurar Firebase. Sigue los pasos del README o pídelos aquí.";
+    return;
+  }
+
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getDatabase(app);
+    auth = getAuth(app);
+
+    const result = await signInAnonymously(auth);
+    me = result.user;
+
+    $("myName").textContent = myName;
+    $("login").classList.add("hidden");
+    $("chat").classList.remove("hidden");
+
+    startPresence();
+    startChat();
+  } catch (error) {
+    $("loginError").textContent =
+      "No se pudo conectar. Revisa Firebase Authentication y la configuración de la base de datos.";
+  }
+});
+
+function startPresence() {
+  const myRef = ref(db, "presence/" + me.uid);
+
+  onValue(ref(db, ".info/connected"), async snapshot => {
+    if (snapshot.val() === true) {
+      await onDisconnect(myRef).remove();
+      await set(myRef, {
+        name: myName,
+        joinedAt: serverTimestamp()
+      });
+    }
+  });
+
+  onValue(ref(db, "presence"), snapshot => {
+    const list = $("users");
+    list.replaceChildren();
+
+    let total = 0;
+
+    snapshot.forEach(child => {
+      const person = child.val();
+      if (!person || !person.name) return;
+
+      total++;
+
+      const li = document.createElement("li");
+      li.textContent =
+        person.name + (child.key === me.uid ? " (tú)" : "");
+
+      list.appendChild(li);
+    });
+
+    $("count").textContent = total +
+      (total === 1 ? " persona" : " personas");
+  });
+}
+
+function startChat() {
+  const messagesQuery = query(
+    ref(db, "messages"),
+    limitToLast(100)
+  );
+
+  onChildAdded(messagesQuery, snapshot => {
+    renderMessage(snapshot.val());
+  });
+}
+
+$("messageForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const text = $("message").value.trim();
+
+  if (!text) return;
+
+  if (hasBadWords(text)) {
+    showNotice(
+      "🚫 Tu mensaje contiene palabras prohibidas. Cámbialas."
+    );
+    return;
+  }
+
+  const remaining = 30000 - (Date.now() - lastSent);
+
+  if (remaining > 0) {
+    showNotice(
+      "⏳ Espera " + Math.ceil(remaining / 1000) +
+      " segundos antes de enviar otro mensaje."
+    );
+    return;
+  }
+
+  $("send").disabled = true;
+
+  try {
+    await push(ref(db, "messages"), {
+      uid: me.uid,
+      name: myName,
+      text: text,
+      createdAt: Date.now(),
+      serverCreatedAt: serverTimestamp()
+    });
+
+    lastSent = Date.now();
+    $("message").value = "";
+    showNotice("Mensaje enviado correctamente.");
+    $("timer").textContent =
+      "Espera 30 segundos para volver a enviar.";
+
+    setTimeout(() => {
+      $("send").disabled = false;
+      $("timer").textContent = "Ya puedes enviar otro mensaje.";
+    }, 30000);
+
+  } catch (error) {
+    showNotice("No se pudo enviar. Revisa tu conexión.");
+    $("send").disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
